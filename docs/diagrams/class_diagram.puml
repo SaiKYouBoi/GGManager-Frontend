@@ -1,0 +1,99 @@
+@startuml GGManager - Domain Class Diagram
+
+skinparam classAttributeIconSize 0
+skinparam classFontSize 13
+skinparam classBackgroundColor #EEEDFE
+skinparam classBorderColor #AFA9EC
+skinparam classArrowColor #73726c
+skinparam classFontColor #3C3489
+
+abstract class User {
+  +bigint id
+  +string name
+  +string email
+  +string password
+  +enum role
+}
+
+class Organizer {
+  +createTournament() : Tournament
+  +editTournament() : Tournament
+  +deleteTournament() : void
+  +closeRegistrations() : void
+  +enterScore() : void
+}
+
+class Player {
+  +register() : Registration
+  +viewMatches() : Match[]
+  +viewBracket() : array
+}
+
+class Tournament {
+  +bigint id
+  +string name
+  +string game
+  +datetime date
+  +int max_participants
+  +enum status
+  +string format
+  +bigint organizer_id
+}
+
+class Registration {
+  +bigint id
+  +bigint tournament_id
+  +bigint player_id
+  +datetime registered_at
+  +enum status
+}
+
+class Match {
+  +bigint id
+  +bigint tournament_id
+  +int round
+  +int position
+  +bigint player1_id
+  +bigint player2_id
+  +bigint winner_id
+  +int score_player1
+  +int score_player2
+  +enum status
+}
+
+class BracketService {
+  +generate(tournament: Tournament) : void
+  +advanceWinner(match: Match) : void
+  +getBracketTree(tournament: Tournament) : array
+}
+
+class GenerateBracketJob {
+  +handle() : void
+}
+
+class ScoreUpdated {
+  +match: Match
+  +broadcastOn() : Channel
+  +broadcastWith() : array
+}
+
+User <|-- Organizer : extends
+User <|-- Player : extends
+
+Organizer "1" --> "0..*" Tournament : creates
+Player "1" --> "0..*" Registration : makes
+
+Tournament "1" --> "0..*" Registration : has
+Tournament "1" --> "0..*" Match : contains
+
+Registration --> Player : belongs to
+Registration --> Tournament : belongs to
+
+GenerateBracketJob ..> BracketService : delegates to
+BracketService ..> Match : creates
+BracketService ..> Tournament : reads
+
+Match ..> ScoreUpdated : fires
+ScoreUpdated ..> Match : carries
+
+@enduml
